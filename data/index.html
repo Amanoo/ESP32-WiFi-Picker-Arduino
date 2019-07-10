@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang=en>
+    <meta charset=utf-8>
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name=viewport>
+    <link href=metro.min.css rel=stylesheet>
+    <style>
+        .login-form {
+            width: 350px;
+            height: auto;
+            top: 50%;
+        }
+
+        #manualdiv {
+            width: 75%;
+            position: fixed;
+            left: 50%;
+            margin-left: -40%;
+            height: 16%;
+            z-index:2;
+            display: none;
+        }    
+
+        #passdiv {
+            width: 75%;
+            position: fixed;
+            left: 50%;
+            margin-left: -40%;
+            height: 16%;
+            z-index:2;
+            display: none;
+        }
+        .loader {
+            border: 10px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 10px solid #607d8b;
+            width: 50px;
+            height: 50px;
+            -webkit-animation: spin 2s linear infinite; /* Safari */
+            animation: spin 2s linear infinite;
+            display:inline-block;
+            position:absolute;
+            bottom:13px;
+            right:5px;
+        }
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body onload="firstrefresh()">
+
+<div id=manualdiv>
+        <form action=javascript: class="bg-white bd-default border login-form mx-auto p-6 win-shadow" data-clear-invalid=2000 data-on-validate-form=validateForm id=manualform>
+            <span class="mif-4x mif-wifi-lock place-right" style=margin-top:-10px></span>
+            <h3 class=text-light>Add WiFi Network</h3>
+            <hr class="bg-white mb-4 mt-4 thin">
+            <div class=form-group>
+                <input data-prepend="<span class='mif-wifi-connect'>" data-role=input placeholder="Enter WiFi SSID...">
+            </div>
+            <div class=form-group>
+                <input data-prepend="<span class='mif-key'>" data-role=input placeholder="Enter password..." type=password>
+            </div>
+            <div class="form-group mt-10">
+                <button class=button class="btn btn-info" onclick=submitmanual()>Connect</button>
+                <button class=button onclick=cancelmanual()>Cancel</button>
+            </div>
+        </form>
+    </div>
+    <div id=passdiv>
+        <form action=javascript: class="bg-white bd-default border login-form mx-auto p-6 win-shadow" data-clear-invalid=2000 data-on-validate-form=validateForm id=passform>
+            <span class="mif-4x mif-wifi-lock place-right" style=margin-top:-10px></span>
+            <h3 class=text-light>Connect to WiFi Network</h3>
+            <hr class="bg-white mb-4 mt-4 thin">
+            <div class=form-group>
+                WiFi SSID:<p id=networkID>
+            </div>
+            <div class=form-group>
+                <p id=passarea>
+            </div>
+            <div class="form-group mt-10">
+                <button class=button class="btn btn-info" onclick=submitpass()>Connect</button>
+                <button class=button onclick=cancelpass()>Cancel</button>
+            </div>
+        </form>
+    </div>
+
+
+    <div class="container p-4">
+        <h3>Connect to network</h3>
+        <button id="refrsh" class="button secondary" onclick=refresh("refresh")>Refresh network list</button>
+        <button class="button secondary" onclick=addmanual()>Manual WiFi network</button>
+        <p id="spinner" class="loader"></p>
+    </div>
+
+    <div class="border bd-dark container p-4">
+        <ul data-role=listview data-select-current=false data-select-node=true data-selectable=false data-view=list id=listview-3>
+            <span id=networklist>
+            </span>
+        </ul>
+    </div>
+    
+    <script src="jquery-3.3.1.min.js"></script>
+    <script src="metro.min.js"></script>
+    <script>
+        function firstrefresh() {
+            refresh("firstrefresh");
+        }
+
+        function refresh(refreshmode) {
+            document.getElementById("spinner").style.visibility = "visible";
+            document.getElementById("refrsh").disabled = true;
+            document.getElementById("refrsh").classList.remove("secondary");
+
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById("spinner").style.visibility = "hidden";
+                    document.getElementById("refrsh").classList.add("secondary");
+
+                    document.getElementById("refrsh").disabled = false;
+
+                    var response=this.responseText.split('\n');
+
+                    var newlist="";
+                    for(var i = 0;i < response.length;i++){
+                        networkinfo=response[i].split('\t');
+                        newlist+="<li onclick=\"connectnetwork(&quot;"+networkinfo[0]+"&quot;,"+networkinfo[2]+")\" class=\"node current\"><span class=\"icon\"><span class=\"";
+                        var strength=parseInt(networkinfo[1]);
+
+                        if(strength>-70){newlist+="mif-wifi-full";}else if(strength>-85){newlist+="mif-wifi-mid";}else{newlist+="mif-wifi-low";}
+
+
+                        newlist+=" mif-lg\">";
+                        if (networkinfo[2]=="1"){newlist+="<span class=\"mif-lock\"></span>";}
+                        newlist+="</span></span><div class=\"data\"><div class=\"caption\">&ensp;&emsp;"+networkinfo[0]+"</div></div></li>";
+
+                    }
+                    document.getElementById("networklist").innerHTML = newlist;
+                }
+            };
+            xhttp.open("POST", refreshmode, true);
+            xhttp.send();
+        }
+
+        function connectnetwork(networkname, passwordprotected) {
+            var x = document.getElementById("passdiv");
+            x.style.display = "block";
+
+            var networkarea = document.getElementById("networkID");
+            networkarea.innerHTML = networkname;
+
+            var passarea = document.getElementById("passarea");
+            if (passwordprotected) {
+                passarea.innerHTML = "<input type=\"password\" data-role=\"input\" data-prepend=\"<span class='mif-key'>\" placeholder=\"Enter password...\">";
+            } else {
+                passarea.innerHTML = "Is this correct?"
+            }
+        }
+
+        function submitpass() {
+            var networkarea = document.getElementById("networkID");
+            var x = document.getElementById("passform");
+            var passarea = document.getElementById("passarea");
+            if (x.elements[0].value != "" || passarea.innerHTML == "Is this correct?") {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "connectnetwork", true);
+                xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhttp.send("ssid=" + networkarea.innerHTML + "&pass=" + x.elements[0].value)
+            }
+        }
+
+        function cancelpass() {
+            document.getElementById("passform").reset(),
+            document.getElementById("passdiv").style.display = "none"
+        }
+        function addmanual() {
+            document.getElementById("manualdiv").style.display = "block"
+        }
+        function submitmanual() {
+            var x = document.getElementById("manualform");
+            if (x.elements[0].value != "") {
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", "connectnetwork", true);
+                xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhttp.send("ssid=" + x.elements[0].value + "&pass=" + x.elements[2].value);
+            }
+        }
+        function cancelmanual() {
+            document.getElementById("manualform").reset(),
+            document.getElementById("manualdiv").style.display = "none"
+        }
+    </script>
+</body>
+</html>
