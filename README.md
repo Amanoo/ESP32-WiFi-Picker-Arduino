@@ -8,7 +8,7 @@ https://github.com/me-no-dev/AsyncTCP
 
 To use, simply include "wifipicker.hpp", and add "wifiPicker();" in the setup, like so:
 
-```Arduino
+```C++
 #include "wifipicker.hpp"
 void setup() {
   wifiPicker();
