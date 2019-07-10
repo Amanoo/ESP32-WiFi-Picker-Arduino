@@ -14,6 +14,7 @@ To use, simply include "wifipicker.hpp", and add "wifiPicker();" in the setup, l
 void setup() {
   wifiPicker();
   // put the rest of your setup code here.
-}```
+}
+```
 
 wifiPicker() will terminate once connection to a WiFi network has been established.
